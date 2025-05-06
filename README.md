@@ -52,10 +52,10 @@ docker run ghcr.io/pg3io/site-monitor --interval 5 https://site1.com https://sit
 docker build -t site-monitor .
 
 # Lancer le monitoring
-docker run site-monitor https://site1.com https://site2.com
+docker run -t site-monitor https://site1.com https://site2.com
 
 # Lancer avec des options personnalisées
-docker run site-monitor --interval 5 https://site1.com https://site2.com
+docker run -t site-monitor --interval 5 https://site1.com https://site2.com
 ```
 
 ## 💻 Utilisation
