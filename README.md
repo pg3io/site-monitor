@@ -32,6 +32,32 @@ cd site-monitor
 pip install -r requirements.txt
 ```
 
+## 🐳 Utilisation avec Docker
+
+### Depuis GitHub Container Registry
+```bash
+# Récupérer l'image
+docker pull ghcr.io/pg3io/site-monitor:latest
+
+# Lancer le monitoring avec les options par défaut
+docker run ghcr.io/pg3io/site-monitor https://site1.com https://site2.com
+
+# Lancer avec un intervalle personnalisé
+docker run ghcr.io/pg3io/site-monitor --interval 5 https://site1.com https://site2.com
+```
+
+### Construction locale
+```bash
+# Construire l'image
+docker build -t site-monitor .
+
+# Lancer le monitoring
+docker run site-monitor https://site1.com https://site2.com
+
+# Lancer avec des options personnalisées
+docker run site-monitor --interval 5 https://site1.com https://site2.com
+```
+
 ## 💻 Utilisation
 
 ### Commande de base
