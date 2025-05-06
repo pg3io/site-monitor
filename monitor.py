@@ -11,6 +11,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.live import Live
 import argparse
+import os
 
 # Constants
 TIMEOUT = 5
@@ -18,8 +19,10 @@ DEFAULT_INTERVAL = 10
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 TIME_FORMAT = "%H:%M:%S"
 
-# Initialize rich console
-console = Console()
+# Force enable terminal features and colors
+os.environ["TERM"] = "xterm-256color"
+# Initialize rich console with forced terminal features
+console = Console(force_terminal=True, color_system="truecolor")
 
 def check_site(url: str) -> Dict:
     """
