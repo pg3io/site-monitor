@@ -78,7 +78,7 @@ def create_table(results: List[Dict], current_time: str, interval: int) -> Table
     Returns:
         Table: Formatted rich table with results
     """
-    title = f"Website Monitoring | Last Check: {current_time} | Check Interval: {interval}s"
+    title = f"Last Check: {current_time} | Check Interval: {interval}s"
     table = Table(title=title, title_style="bold blue")
     
     # Add columns with consistent styling
