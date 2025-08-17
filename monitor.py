@@ -10,19 +10,57 @@ from typing import Dict, List
 from rich.console import Console
 from rich.table import Table
 from rich.live import Live
+from rich.panel import Panel
+from rich.columns import Columns
 import argparse
 import os
+from collections import defaultdict, deque
 
 # Constants
 TIMEOUT = 5
 DEFAULT_INTERVAL = 10
 DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 TIME_FORMAT = "%H:%M:%S"
+HISTORY_SIZE = 50
 
 # Force enable terminal features and colors
 os.environ["TERM"] = "xterm-256color"
 # Initialize rich console with forced terminal features
 console = Console(force_terminal=True, color_system="truecolor")
+
+# Global history storage (lost when program stops)
+response_history = defaultdict(lambda: deque(maxlen=HISTORY_SIZE))
+
+def create_sparkline(values: List[float]) -> str:
+    """
+    Create a sparkline from a list of response times.
+    
+    Args:
+        values (List[float]): List of response times in ms
+        
+    Returns:
+        str: Sparkline representation
+    """
+    if not values:
+        return ""
+    
+    # Sparkline characters from low to high
+    chars = "▁▂▃▄▅▆▇█"
+    
+    # Normalize values to 0-7 range
+    min_val = min(values)
+    max_val = max(values)
+    
+    if max_val == min_val:
+        return chars[4] * len(values)  # Middle character for flat line
+    
+    normalized = []
+    for val in values:
+        # Scale to 0-7 range
+        scaled = int(((val - min_val) / (max_val - min_val)) * 7)
+        normalized.append(min(7, max(0, scaled)))
+    
+    return "".join(chars[i] for i in normalized)
 
 def check_site(url: str) -> Dict:
     """
@@ -41,11 +79,15 @@ def check_site(url: str) -> Dict:
         response = requests.get(url, timeout=TIMEOUT, allow_redirects=True)
         response_time = (time.time() - start_time) * 1000  # Convert to milliseconds
         
+        # Store response time in history
+        response_history[url].append(response_time)
+        
         return {
             'timestamp': timestamp,
             'url': url,
             'status': f"UP ({response.status_code})",
             'response_time': f"{response_time:.0f}ms",
+            'response_time_raw': response_time,
             'is_up': response.status_code < 400
         }
         
@@ -58,13 +100,43 @@ def check_site(url: str) -> Dict:
     except requests.RequestException:
         status = 'DOWN (Unknown Error)'
     
+    # For failed requests, don't add to response history
     return {
         'timestamp': timestamp,
         'url': url,
         'status': status,
         'response_time': 'N/A',
+        'response_time_raw': None,
         'is_up': False
     }
+
+def create_sparkline_panel(url: str, result: Dict) -> Panel:
+    """
+    Create a panel with sparkline for a specific site.
+    
+    Args:
+        url (str): The URL being monitored
+        result (Dict): Latest check result
+        
+    Returns:
+        Panel: Rich panel with sparkline and current status
+    """
+    history = list(response_history[url])
+    sparkline = create_sparkline(history) if history else "No data"
+    
+    # Pad sparkline to minimum width for better visual consistency
+    if len(sparkline) < 20:
+        sparkline = sparkline.ljust(20, "▁")
+    
+    # Create status text with current response time
+    status_color = "green" if result['is_up'] else "red"
+    status_text = f"[{status_color}]{result['response_time']} {result['status']}[/]"
+    
+    # Truncate URL for display
+    display_url = url if len(url) <= 25 else url[:22] + "..."
+    
+    panel_content = f"{sparkline}\n{status_text}"
+    return Panel(panel_content, title=display_url, title_align="left", width=35)
 
 def create_table(results: List[Dict], current_time: str, interval: int) -> Table:
     """
@@ -79,22 +151,32 @@ def create_table(results: List[Dict], current_time: str, interval: int) -> Table
         Table: Formatted rich table with results
     """
     title = f"Last Check: {current_time} | Check Interval: {interval}s"
-    table = Table(title=title, title_style="bold blue")
+    table = Table(title=title, title_style="bold blue", padding=(0, 1))
     
     # Add columns with consistent styling
     table.add_column("Time", justify="center", style="cyan")
     table.add_column("Site", no_wrap=True)
     table.add_column("Status", justify="center")
     table.add_column("Response Time", justify="right", style="magenta")
+    table.add_column("Trend", justify="center", width=25)
 
     # Add rows with full line coloring
     for result in results:
         style = "green" if result['is_up'] else "red"
+        
+        # Get sparkline for this site
+        history = list(response_history[result['url']])
+        sparkline = create_sparkline(history) if history else ""
+        
+        # Pad sparklines to consistent width to prevent overlap
+        sparkline_padded = sparkline.ljust(20) if sparkline else "".ljust(20)
+        
         table.add_row(
             result['timestamp'],
             result['url'],
             result['status'],
             result['response_time'],
+            sparkline_padded,
             style=style
         )
     
@@ -122,7 +204,8 @@ def monitor_sites(sites: List[str], interval: int = DEFAULT_INTERVAL) -> None:
                 current_time = datetime.now().strftime(DATE_FORMAT)
                 table = create_table(results, current_time, interval)
                 
-                # Update display
+                # Clear and update display
+                console.clear()
                 live.update(table, refresh=True)
                 
                 # Wait for next check

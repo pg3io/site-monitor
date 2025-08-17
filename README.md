@@ -9,6 +9,7 @@ Site Monitor est un outil en ligne de commande qui permet de surveiller en temps
 - URL du site
 - Statut (UP/DOWN avec code de retour)
 - Temps de réponse
+- **Trend** : Graphiques sparkline montrant l'évolution des temps de réponse
 
 ## ✨ Fonctionnalités
 
@@ -18,6 +19,7 @@ Site Monitor est un outil en ligne de commande qui permet de surveiller en temps
 - 🚦 Détection des différents types d'erreurs (Timeout, SSL, Connection)
 - 📊 Affichage clair en format tableau
 - 🔍 Temps de réponse précis
+- 📈 **Graphiques sparkline** pour visualiser les tendances de performance
 
 ## 🚀 Installation
 
@@ -77,15 +79,22 @@ python monitor.py -i 5 https://site1.com https://site2.com
 ## 📸 Exemple de sortie
 
 ```
-╭────────────────────────────────────────────────────────────────────────╮
-│   Website Monitoring | Last Check: 2024-01-20 15:30:45 | Interval: 10s │
-├──────────┬─────────────────┬────────────────┬──────────────────────────┤
-│   Time   │      Site       │     Status     │      Response Time       │
-├──────────┼─────────────────┼────────────────┼──────────────────────────┤
-│ 15:30:45 │ https://site1.com │   UP (200)    │         145ms           │
-│ 15:30:45 │ https://site2.com │ DOWN (Timeout) │          N/A            │
-╰──────────┴─────────────────┴────────────────┴──────────────────────────╯
+┏━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃   Time   ┃ Site                                     ┃  Status  ┃ Response Time ┃           Trend           ┃
+┡━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 15:30:45 │ https://site1.com                        │ UP (200) │         145ms │    ▃▄▅▆▇█▆▅▄▃▂▁         │
+│ 15:30:45 │ https://site2.com                        │ DOWN     │          N/A  │                          │
+└──────────┴──────────────────────────────────────────┴──────────┴───────────────┴───────────────────────────┘
 ```
+
+### 📈 Colonne Trend
+
+La nouvelle colonne **Trend** affiche des graphiques sparkline (▁▂▃▄▅▆▇█) qui montrent l'évolution des temps de réponse en temps réel :
+- Les caractères bas (▁▂) représentent des temps de réponse rapides
+- Les caractères hauts (▆▇█) représentent des temps de réponse plus lents
+- L'historique des 50 dernières mesures est conservé en mémoire
+- Les graphiques se construisent progressivement au fil des vérifications
+- L'historique est perdu à l'arrêt du programme (pas de cache persistant)
 
 ## 🛠️ Prérequis
 
